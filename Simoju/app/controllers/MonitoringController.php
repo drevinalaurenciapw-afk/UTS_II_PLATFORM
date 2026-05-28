@@ -9,7 +9,10 @@ class MonitoringController extends Controller
     {
         UserMiddleware::check();
 
+        // =========================
         // DEFAULT DATA
+        // =========================
+
         $data['wilayah'] = "Jakarta";
         $data['suhu'] = 32.5;
         $data['aqi'] = 50;
@@ -37,52 +40,96 @@ class MonitoringController extends Controller
         }
 
         // =========================
-        // AQICN API REALTIME
+        // MULTI WILAYAH AQICN
         // =========================
 
-        $aqiUrl =
-        "https://api.waqi.info/feed/jakarta/?token=6b305246e9d289ac5dba545cb95584e73a5e14e9";
+        $wilayahList = [
+            'jakarta',
+            'kelapagading',
+            'jagakarsa',
+            'kemayoran'
+        ];
 
-        $aqiResponse =
-        @file_get_contents($aqiUrl);
+        $data['monitoring'] = [];
 
-        if ($aqiResponse !== false) {
+        foreach($wilayahList as $wilayah)
+        {
+            $aqiUrl =
+            "https://api.waqi.info/feed/" .
+            $wilayah .
+            "/?token=6b305246e9d289ac5dba545cb95584e73a5e14e9";
 
-            $aqiResult =
-            json_decode($aqiResponse, true);
+            $aqiResponse =
+            @file_get_contents($aqiUrl);
 
-            if (
-                isset($aqiResult['status']) &&
-                $aqiResult['status'] == 'ok'
-            ) {
+            if ($aqiResponse !== false) {
 
-                $data['aqi'] =
-                $aqiResult['data']['aqi'];
+                $aqiResult =
+                json_decode($aqiResponse, true);
 
-                $data['wilayah'] =
-                $aqiResult['data']['city']['name'];
+                if (
+                    isset($aqiResult['status']) &&
+                    $aqiResult['status'] == 'ok'
+                ) {
+
+                    $aqi =
+                    $aqiResult['data']['aqi'];
+
+                    $wilayahNama =
+                    $aqiResult['data']['city']['name'];
+
+                    $suhu =
+                    $aqiResult['data']['iaqi']['t']['v'] ?? 0;
+
+                    // KATEGORI
+
+                    if ($aqi <= 50) {
+
+                        $kategori = "Baik";
+
+                    } elseif ($aqi <= 100) {
+
+                        $kategori = "Sedang";
+
+                    } elseif ($aqi <= 150) {
+
+                        $kategori = "Tidak Sehat";
+
+                    } else {
+
+                        $kategori = "Berbahaya";
+                    }
+
+                    // SIMPAN KE ARRAY
+
+                    $data['monitoring'][] = [
+
+                        'wilayah' => $wilayahNama,
+                        'suhu' => $suhu,
+                        'aqi' => $aqi,
+                        'kategori' => $kategori
+                    ];
+                }
             }
         }
 
         // =========================
-        // KATEGORI AQI
+        // AQI UTAMA DASHBOARD
         // =========================
 
-        if ($data['aqi'] <= 50) {
+        if (!empty($data['monitoring'])) {
 
-            $data['kategori'] = "Baik";
+            $data['wilayah'] =
+            $data['monitoring'][0]['wilayah'];
 
-        } elseif ($data['aqi'] <= 100) {
+            $data['suhu'] =
+            $data['monitoring'][0]['suhu'];
 
-            $data['kategori'] = "Sedang";
+            $data['aqi'] =
+            $data['monitoring'][0]['aqi'];
 
-        } elseif ($data['aqi'] <= 150) {
-
-            $data['kategori'] = "Tidak Sehat";
-
-        } else {
-
-            $data['kategori'] = "Berbahaya";
+            $data['kategori'] =
+            $data['monitoring'][0]['kategori'];
         }
 
         // =========================

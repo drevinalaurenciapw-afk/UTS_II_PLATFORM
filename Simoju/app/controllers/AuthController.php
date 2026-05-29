@@ -2,36 +2,36 @@
 
 class AuthController extends Controller
 {
-   public function login()
-{
-    if($_SERVER['REQUEST_METHOD'] == 'POST')
+    public function login()
     {
-        $userModel = $this->model('User');
-        $user = $userModel->findByEmail($_POST['email']);
-
-        if($user && password_verify($_POST['password'], $user['password']))
+        if($_SERVER['REQUEST_METHOD'] == 'POST')
         {
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['nama'] = $user['nama'];
-            $_SESSION['role'] = $user['role'];
+            $userModel = $this->model('User');
+            $user = $userModel->findByEmail($_POST['email']);
 
-            if($user['role'] == 'admin')
+            if($user && password_verify($_POST['password'], $user['password']))
             {
-                header("Location: /simoju/public/DashboardController/admin");
-            }
-            else
-            {
-                header("Location: /simoju/public/DashboardController/user");
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['nama'] = $user['nama'];
+                $_SESSION['role'] = $user['role'];
+
+                if($user['role'] == 'admin')
+                {
+                    header("Location: /simoju/public/index.php?url=DashboardController/admin");
+                }
+                else
+                {
+                    header("Location: /simoju/public/index.php?url=DashboardController/user");
+                }
+
+                exit;
             }
 
-            exit;
+            $data['error'] = "Email atau Password salah";
         }
 
-        $data['error'] = "Email atau Password salah";
+        $this->view('auth/login');
     }
-
-    $this->view('auth/login');
-} 
 
     public function register()
     {
@@ -41,7 +41,7 @@ class AuthController extends Controller
 
             $userModel->register($_POST);
 
-            header("Location: /simoju/public/AuthController/login");
+            header("Location: /simoju/public/index.php?url=AuthController/login");
             exit;
         }
 
@@ -52,7 +52,7 @@ class AuthController extends Controller
     {
         session_destroy();
 
-        header("Location: /simoju/public/AuthController/login");
+        header("Location: /simoju/public/index.php?url=AuthController/login");
         exit;
     }
 }
